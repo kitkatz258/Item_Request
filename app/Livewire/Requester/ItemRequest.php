@@ -10,7 +10,8 @@ class ItemRequest extends Component
     public $cart = [];
     public $items;
     public $quantities = [];
-    public $selected_item;
+    public ?Item $selected_item = null;
+    public bool $showModal = false;
 
     public function mount()
     {
@@ -19,8 +20,8 @@ class ItemRequest extends Component
 
     public function addToCart($itemId)
     {
-        $item = Item::findOrFail($itemId);
-        $qty = $this->quantities[$itemId] ?? 1;
+        $item = $this->selected_item;
+        $qty = $this->quantities[$item->id];
 
         if (isset($this->cart[$itemId])) {
             $this->cart[$itemId]['quantity'] += $qty;
@@ -32,6 +33,7 @@ class ItemRequest extends Component
         }
 
         $this->quantities[$itemId] = 1;
+        $this->closeModal();
     }
 
     public function removeFromCart($itemId)
@@ -39,11 +41,21 @@ class ItemRequest extends Component
         unset($this->cart[$itemId]);
     }
 
-    public function openItem($itemId)
+    public function openItem($id)
     {
-        $this->selected_item = Item::findOrFail($itemId);
+        $this->selected_item = Item::findOrFail($id);
         // dd($this->selected_item);
-        $this->dispatch('show-item-detail');
+        $this->showModal = true;
+
+        if(!isset($this->quantities[$id])) {
+            $this->quantities[$id] = 1;
+        }
+    }
+
+    public function closeModal()
+    {
+        $this->showModal = false;
+        $this->selected_item = null;
     }
 
     public function submitRequest()

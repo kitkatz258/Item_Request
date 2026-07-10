@@ -1,4 +1,5 @@
-<div wire:ignore.self class="modal fade" id="item-detail" tabindex="-1">
+@if($showModal)
+<div class="modal d-block" style="background: rgba(0, 0, 0, .5);">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -20,15 +21,11 @@
                 @endif
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                @if($selected_item)
-                    <button type="button" class="btn btn-primary"
-                        wire:click="addToCart({{ $selected_item->id }})"
-                        onclick="bootstrap.Modal.getInstance(document.getElementById('item-detail')).hide()">
-                        Add to Cart
-                    </button>
-                @endif
+                <button class="btn btn-close" wire:click="closeModal">
+                    Close
+                </button>
             </div>
         </div>
     </div>
 </div>
+@endif
