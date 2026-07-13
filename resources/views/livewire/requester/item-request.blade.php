@@ -8,9 +8,9 @@
 
     <div class="row">
         <div class="col-md-8">
-            <div class="row g-3 row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5">
+            <div class="row g-3 row-cols-2 row-cols-sm-3 row-cols-md-4">
                 @forelse($items as $item)
-                    <div class="col-md-4">
+                    <div class="col" wire:key="item-{{ $item->id }}">
                         <div class="card h-100 shadow-sm" style="cursor:pointer;"
                             wire:click="openItem({{ $item->id }})">
                             <img src="{{ $item->image ?? 'https://placehold.co/300x200?text=' . urlencode($item->name) }}"
@@ -30,25 +30,25 @@
             </div>
         </div>
 
-        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <div class="col-md-4">
             <div class="card sticky-top" style="top: 20px;">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Your Card</span>
-                    <span class="badge bg-primary">{{ count($cart) }} items</span>
+                    <span>Your Cart</span>
+                    <span class="badge bg-primary">{{ $draftItems->count() }} items</span>
                 </div>
                 <div class="card-body">
-                    @if(empty($cart))
+                    @if($draftItems->isEmpty())
                         <p class="text-muted text-center">No items in cart yet.</p>
                     @else
                         <table class="table table-sm">
                             <tbody>
-                                @foreach($cart as $itemId => $details)
-                                    <tr>
-                                        <td>{{ $details['name'] }}</td>
-                                        <td class="text-center">x{{ $details['quantity'] }}</td>
+                                @foreach($draftItems as $draft)
+                                    <tr wire:key="draft-{{ $draft->id }}">
+                                        <td>{{ $draft->item->name }}</td>
+                                        <td class="text-center">x{{ $draft->quantity }}</td>
                                         <td>
                                             <button class="btn btn-sm btn-danger"
-                                                wire:click="removeFromCart({{ $itemId }})">
+                                                wire:click="removeFromCart({{ $draft->item_id }})">
                                                 &times;
                                             </button>
                                         </td>
@@ -64,14 +64,6 @@
             </div>
         </div>
     </div>
-
+    
     @include('livewire.requester.modal.item-detail-modal')
-
-    <script>
-        document.addEventListener('livewire:initialized', () => {
-            Livewire.on('show-item-detail', () => {
-                new bootstrap.Modal(document.getElementById('item-detail')).show();
-            });
-        });
-    </script>
 </div>

@@ -3,88 +3,102 @@
 namespace App\Livewire\Requester;
 
 use App\Models\Item;
+use App\Models\DraftItem;
+use App\Models\ItemRequest as ItemRequestModel;
+use App\Models\ItemRequestItem;
 use Livewire\Component;
 
 class ItemRequest extends Component
 {
-    public $cart = [];
     public $items;
-    public $quantities = [];
-    public ?Item $selected_item = null;
-    public bool $showModal = false;
+    public $showModal = false;
+    public $selected_item_id = null;
+    public $qty = 1;
 
     public function mount()
     {
         $this->items = Item::where('status', true)->get();
     }
 
-    public function addToCart($itemId)
+    public function openItem($itemId)
     {
-        $item = $this->selected_item;
-        $qty = $this->quantities[$item->id];
-
-        if (isset($this->cart[$itemId])) {
-            $this->cart[$itemId]['quantity'] += $qty;
-        } else {
-            $this->cart[$itemId] = [
-                'name' => $item->name,
-                'quantity' => $qty,
-            ];
-        }
-
-        $this->quantities[$itemId] = 1;
-        $this->closeModal();
-    }
-
-    public function removeFromCart($itemId)
-    {
-        unset($this->cart[$itemId]);
-    }
-
-    public function openItem($id)
-    {
-        $this->selected_item = Item::findOrFail($id);
-        // dd($this->selected_item);
+        $this->selected_item_id = $itemId;
+        $this->qty = 1;
         $this->showModal = true;
-
-        if(!isset($this->quantities[$id])) {
-            $this->quantities[$id] = 1;
-        }
     }
 
     public function closeModal()
     {
         $this->showModal = false;
-        $this->selected_item = null;
+        $this->selected_item_id = null;
+        $this->qty = 1;
+    }
+
+    public function addToCart()
+    {
+        $qty = max(1, (int) $this->qty);
+
+        $draft = DraftItem::where('user_id', auth()->id())
+            ->where('item_id', $this->selected_item_id)
+            ->first();
+
+        if ($draft) {
+            $draft->update(['quantity' => $draft->quantity + $qty]);
+        } else {
+            DraftItem::create([
+                'user_id' => auth()->id(),
+                'item_id' => $this->selected_item_id,
+                'quantity' => $qty,
+            ]);
+        }
+
+        $this->closeModal();
+    }
+
+    public function removeFromCart($itemId)
+    {
+        DraftItem::where('user_id', auth()->id())
+            ->where('item_id', $itemId)
+            ->delete();
     }
 
     public function submitRequest()
     {
-        if(empty($this->cart)){
+        $draftItems = DraftItem::where('user_id', auth()->id())->get();
+
+        if ($draftItems->isEmpty()) {
             session()->flash('error', 'Your cart is empty.');
             return;
         }
 
-        $request = \App\Models\ItemRequest::create([
+        $request = ItemRequestModel::create([
             'user_id' => auth()->id(),
             'status' => 'Pending',
             'current_sequence' => 1,
         ]);
 
-        foreach($this->cart as $itemId => $details) {
-            \App\Models\ItemRequestItem::create([
+        foreach ($draftItems as $draft) {
+            ItemRequestItem::create([
                 'request_id' => $request->id,
-                'item_id' => $itemId,
-                'quantity' => $details['quantity'],
+                'item_id' => $draft->item_id,
+                'quantity' => $draft->quantity,
             ]);
         }
 
-        $this->cart = [];
+        DraftItem::where('user_id', auth()->id())->delete();
         session()->flash('message', 'Request submitted successfully!');
     }
 
     public function render()
     {
-        return view('livewire.requester.item-request');
+        return view('livewire.requester.item-request', [
+            'items' => Item::where('status', true)->get(),
+            'draftItems' => DraftItem::with('item')
+                ->where('user_id', auth()->id())
+                ->get(),
+            'selectedItem' => $this->selected_item_id
+                ? Item::find($this->selected_item_id)
+                : null,
+        ]);
     }
 }
