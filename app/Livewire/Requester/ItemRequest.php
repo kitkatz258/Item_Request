@@ -85,6 +85,17 @@ class ItemRequest extends Component
             ]);
         }
 
+        $levels = \App\Models\ApprovalLevel::orderBy('sequence')->get();
+
+        foreach ($levels as $level) {
+            \App\Models\ItemRequestApproval::create([
+                'request_id' => $request->id,
+                'approval_level_id' => $level->id,
+                'sequence' => $level->sequence,
+                'status' => 'Pending',
+            ]);
+        }
+
         DraftItem::where('user_id', auth()->id())->delete();
         session()->flash('message', 'Request submitted successfully!');
     }

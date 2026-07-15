@@ -12,6 +12,9 @@ Route::get('/dashboard', function () {
     if (auth()->user()->role === 'admin') {
         return redirect('/admin/items');
     }
+    if (auth()->user()->role === 'approver') {
+        return redirect('/approver/requests');
+    }
     return redirect('/request/items');
 })->middleware('auth')->name('dashboard');
 
@@ -23,10 +26,20 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->name('admin.items.fetch');
 });
 
+Route::middleware(['auth', 'approver'])->group(function () {
+    Route::get('/approver/requests', function () {
+        return view('approver.requests');
+    })->name('approver.requests');
+});
+
 Route::middleware('auth')->group(function () {
     Route::get('/request/items', function () {
         return view('requester.item-request');
     })->name('requester.items');
+
+    Route::get('/my-requests', function () {
+        return view('requester.my-requests');
+    })->name('requester.my-requests');
 });
 
 Route::middleware('auth')->group(function () {
