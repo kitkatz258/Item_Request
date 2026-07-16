@@ -7,7 +7,10 @@
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
                 </div>
                 <div class="modal-body">
+                    <img src="{{ $selectedItem->image ?? 'https://placehold.co/400x250?text=' . urlencode($selectedItem->name) }}"
+                        class="img-fluid rounded mb-3" style="width: 100%; height: 400px; object-fit:cover;">
                     <p>{{ $selectedItem->description }}</p>
+                    <p class="mb-1 fw-bold">₱{{ number_format($item->price, 2) }}</p>
                     <p class="text-muted">{{ $selectedItem->qty }} available</p>
                     <label class="form-label">Quantity</label>
                     <input type="number" class="form-control" wire:model="qty" min="1" max="{{ $selectedItem->qty }}">

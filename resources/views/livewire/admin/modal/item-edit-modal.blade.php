@@ -16,10 +16,22 @@
                         <label class="form-label">Description</label>
                         <input type="text" class="form-control" wire:model="description">
                     </div>
+                    <div class="col-12">
+                        <label class="form-label">Image URL</label>
+                        <input type="text" class="form-control" wire:model="image" placeholder="https://...">
+                    </div>
                     <div class="col-6">
                         <label class="form-label">Quantity</label>
                         <input type="number" class="form-control" wire:model="qty" min="0">
                         @error('qty') <span class="text-danger">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₱</span>
+                            <input type="number" class="form-control" wire:model="price" min="0" step="0.01">
+                        </div>
+                        @error('price') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-6">
                         <label class="form-label">Status</label>

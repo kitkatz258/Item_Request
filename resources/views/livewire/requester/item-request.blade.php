@@ -18,7 +18,11 @@
                             <div class="card-body">
                                 <h6 class="card-title mb-1">{{ $item->name }}</h6>
                                 <p class="card-text text-muted small">{{ Str::limit($item->description, 50) }}</p>
+                                <p class="mb-1 fw-bold">₱{{ number_format($item->price, 2) }}</p>
                                 <span class="badge bg-secondary">{{ $item->qty }} available</span>
+                            </div>
+                            <div class="card-body">
+                                
                             </div>
                         </div>
                     </div>
