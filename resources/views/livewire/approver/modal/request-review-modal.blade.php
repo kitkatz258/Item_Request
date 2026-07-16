@@ -8,12 +8,40 @@
                 </div>
                 <div class="modal-body">
                     <h6>Item Requested</h6>
-                    <table class="table table-sm">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th style="width: 150px;">Approve Qty</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             @foreach($selectedRequest->requestItems as $ri)
+                                @php $current = $approvedQuantities[$ri->id] ?? 0; @endphp
                                 <tr wire:key="ri-{{ $ri->id }}">
                                     <td>{{ $ri->item->name }}</td>
-                                    <td class="text-muted">x{{ $ri->quantity }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            @if($current <= 1)
+                                                <button type="button" class="btn btn-outline-danger"
+                                                    wire:click="decrementApprovedQty({{ $ri->id }})"
+                                                    wire:confirm="This will remove {{ $ri->item->name }} from the request{{ $selectedRequest->requestItems->count() === 1 ? ' and decline the entire request since it is the only item' : '' }}. Continue?">
+                                                    &minus;
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                    wire:click="decrementApprovedQty({{ $ri->id }})">
+                                                    &minus;
+                                                </button>
+                                            @endif
+                                            <span class="btn btn-light disabled">{{ $current }}</span>
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                wire:click="incrementApprovedQty({{ $ri->id }})"
+                                                @if($current >= $ri->approved_quantity) disabled @endif>
+                                                &plus;
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

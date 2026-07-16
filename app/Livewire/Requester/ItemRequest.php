@@ -139,6 +139,7 @@ class ItemRequest extends Component
                 'request_id' => $request->id,
                 'item_id' => $draft->item_id,
                 'quantity' => $draft->quantity,
+                'approved_quantity' => $draft->quantity,
             ]);
         }
 

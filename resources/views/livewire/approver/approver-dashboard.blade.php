@@ -1,18 +1,4 @@
 <div>
-    @if(session()->has('message'))
-        <div class="alert alert-success">{{ session('message') }}</div>
-    @endif
-    @if(session()->has('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
-    <h2 class="mb-1">Approver Dashboard</h2>
-    @if($myLevel)
-        <p class="text-muted">Step {{ $myLevel->sequence }}: {{ $myLevel->label }}</p>
-    @else
-        <p class="text-danger">No approval level assigned to your account.</p>
-    @endif
-
     @if($requests->isEmpty())
         <p class="text-muted">No requests currently awaiting your approval.</p>
     @else

@@ -10,7 +10,7 @@ class ItemRequestItem extends Model
     use HasFactory;
 
     protected $table = 'request_items';
-    protected $fillable = ['request_id', 'item_id', 'quantity', 'remarks'];
+    protected $fillable = ['request_id', 'item_id', 'quantity', 'remarks', 'approved_quantity'];
     public function itemRequest()
     {
         return $this->belongsTo(ItemRequest::class, 'request_id');

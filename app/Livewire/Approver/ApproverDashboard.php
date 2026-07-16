@@ -6,6 +6,7 @@ use App\Models\ApprovalLevel;
 use App\Models\Item;
 use App\Models\ItemRequest;
 use App\Models\ItemRequestApproval;
+use App\Models\ItemRequestItem;
 use Livewire\Component;
 
 class ApproverDashboard extends Component
@@ -14,11 +15,16 @@ class ApproverDashboard extends Component
     public $showModal = false;
     public $selected_request_id = null;
     public $remarks = '';
+    public $approvedQuantities = [];
 
     public function viewRequest($requestId)
     {
         $this->selected_request_id = $requestId;
         $this->remarks = '';
+
+        $items = ItemRequestItem::where('request_id', $requestId)->get();
+        $this->approvedQuantities = $items->pluck('approved_quantity', 'id')->toArray();
+
         $this->showModal = true;
     }
 
@@ -27,6 +33,33 @@ class ApproverDashboard extends Component
         $this->showModal = false;
         $this->selected_request_id = null;
         $this->remarks = '';
+        $this->approvedQuantities = [];
+    }
+
+    public function incrementApprovedQty($itemId)
+    {
+        $item = ItemRequestItem::find($itemId);
+        if (!$item) return;
+
+        $current = $this->approvedQuantities[$itemId] ?? 0;
+
+        if ($current >= $item->approved_quantity) {
+            $this->dispatch('notify', type: 'error', message: 'Cannot exceed the current approved quantity.');
+            return;
+        }
+
+        $this->approvedQuantities[$itemId] = $current + 1;
+    }
+
+    public function decrementApprovedQty($itemId)
+    {
+        $current = $this->approvedQuantities[$itemId] ?? 0;
+
+        if ($current <= 0) {
+            return;
+        }
+
+        $this->approvedQuantities[$itemId] = $current - 1;
     }
 
     public function approve()
@@ -39,7 +72,52 @@ class ApproverDashboard extends Component
             $this->closeModal();
             return;
         }
-    
+
+        $items = ItemRequestItem::where('request_id', $request->id)->get();
+
+        foreach ($items as $item) {
+            $entered = (int) ($this->approvedQuantities[$item->id] ?? $item->approved_quantity);
+            if ($entered < 0 || $entered > $item->approved_quantity) {
+                $this->dispatch('notify', type: 'error', message: "Invalid quantity for {$item->item->name}.");
+                return;
+            }
+        }
+
+        $itemsToRemove = [];
+
+        foreach ($items as $item) {
+            $entered = (int) ($this->approvedQuantities[$item->id] ?? $item->approved_quantity);
+            if ($entered === 0) {
+                $itemsToRemove[] = $item;
+            } else {
+                $item->update(['approved_quantity' => $entered]);
+            }
+        }
+
+        foreach ($itemsToRemove as $item) {
+            $item->delete();
+        }
+
+        $remainingCount = ItemRequestItem::where('request_id', $request->id)->count();
+
+        if ($remainingCount === 0) {
+            ItemRequestApproval::where('request_id', $request->id)
+                ->where('approval_level_id', $myLevel->id)
+                ->update([
+                    'status' => 'Declined',
+                    'remarks' => $this->remarks ?: 'All items were removed during review.',
+                    'approved_at' => now(),
+                ]);
+
+            ItemRequestApproval::where('request_id', $request->id)
+                ->where('sequence', '>', $myLevel->sequence)
+                ->update(['status' => 'Cancelled']);
+
+            $request->update(['status' => 'Declined']);
+            $this->dispatch('notify', type: 'success', message: 'All items were removed — request declined.');
+            $this->closeModal();
+            return;
+        }
 
         $approval = ItemRequestApproval::where('request_id', $request->id)
             ->where('approval_level_id', $myLevel->id)
@@ -54,11 +132,13 @@ class ApproverDashboard extends Component
         $isLastStep = !ApprovalLevel::where('sequence', '>', $myLevel->sequence)->exists();
 
         if ($isLastStep) {
-            foreach ($request->requestItems as $ri) {
-                $item = Item::find($ri->item_id);
-                if ($item) {
-                    $newQty = max(0, $item->qty - $ri->quantity);
-                    $item->update(['qty' => $newQty]);
+            $remainingItems = ItemRequestItem::where('request_id', $request->id)->get();
+
+            foreach ($remainingItems as $item) {
+                $stockItem = \App\Models\Item::find($item->item_id);
+                if ($stockItem) {
+                    $newQty = max(0, $stockItem->qty - $item->approved_quantity);
+                    $stockItem->update(['qty' => $newQty]);
                 }
             }
 
@@ -66,7 +146,7 @@ class ApproverDashboard extends Component
             $this->dispatch('notify', type: 'success', message: 'Request approved and fulfilled.');
         } else {
             $request->update(['current_sequence' => $myLevel->sequence + 1]);
-            $this->dispatch('notify', type: 'success', message: 'Request approved');
+            $this->dispatch('notify', type: 'success', message: 'Request approved.');
         }
 
         $this->closeModal();
