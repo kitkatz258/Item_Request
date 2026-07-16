@@ -11,6 +11,7 @@ class ItemManagement extends Component
     public $name;
     public $description;
     public $qty;
+    public $price;
     public $status = true;
     public $item_id;
     public $isEditing = false;
@@ -27,19 +28,21 @@ class ItemManagement extends Component
         $this->validate([
             'name' => 'required',
             'qty' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0',
         ]);
 
         Item::create([
             'name' => $this->name,
             'description' => $this->description,
             'qty' => $this->qty,
+            'price' => $this->price,
             'status' => true,
-            'images' => $this->image
+            'image' => $this->image
         ]);
 
         
         $this->dispatch('closeModals');
-        $this->reset(['name', 'description', 'qty']);
+        $this->reset(['name', 'description', 'qty', 'price', 'image']);
     }
 
     public function edit($id)
@@ -49,6 +52,7 @@ class ItemManagement extends Component
         $this->name = $this->selected_item->name;
         $this->description = $this->selected_item->description;
         $this->qty = $this->selected_item->qty;
+        $this->price = $this->selected_item->price;
         $this->status = $this->selected_item->status;
         $this->image = $this->selected_item->image;
         $this->isEditing = true;
@@ -60,23 +64,25 @@ class ItemManagement extends Component
         $this->validate([
             'name' => 'required',
             'qty' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0'
         ]);
 
         Item::findOrFail($this->item_id)->update([
             'name' => $this->name,
             'description' => $this->description,
             'qty' => $this->qty,
+            'price' => $this->price,
             'status' => $this->status,
-            'images' => $this->image
+            'image' => $this->image
         ]);
 
-        $this->reset(['name', 'description', 'qty', 'status', 'item_id', 'isEditing', 'selected_item']);
+        $this->reset(['name', 'description', 'qty', 'price', 'status', 'item_id', 'isEditing', 'selected_item']);
         $this->dispatch('closeModals');
     }
 
     public function cancelEdit()
     {
-        $this->reset(['name', 'description', 'qty', 'status', 'item_id', 'isEditing']);
+        $this->reset(['name', 'description', 'qty', 'price', 'status', 'item_id', 'isEditing']);
     }
 
     public function toggleStatus($id)

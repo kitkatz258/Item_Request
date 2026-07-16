@@ -19,6 +19,28 @@
                         </tbody>
                     </table>
 
+                    @php
+                        $priorApprovals = $selectedRequest->requestApprovals->where('status', '!=', 'Pending');
+                    @endphp
+                    @if($priorApprovals->isNotEmpty())
+                        <h6 class="mt-4">Approval History</h6>
+                        <ul class="list-group mb-3">
+                            @foreach($priorApprovals as $approval)
+                                <li class="list-group-item" wire:key="hist-{{ $approval->id }}">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Step {{ $approval->sequence }}: {{ $approval->approvalLevel->label }}</strong>
+                                        <span class="badge bg-{{ $approval->status === 'Approved' ? 'success' : 'danger' }}">
+                                            {{ $approval->status }}
+                                        </span>
+                                    </div>
+                                    @if($approval->remarks)
+                                        <div class="text-muted small mt-1">"{{ $approval->remarks }}</div>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
                     <div class="mt-3">
                         <label class="form-label">Remarks <span class="text-muted">(required if declining)</span></label>
                         <textarea class="form-control" wire:model="remarks" rows="2" placeholder="Add a note, especially if declining..."></textarea>

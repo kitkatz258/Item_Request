@@ -47,6 +47,7 @@ class ApproverDashboard extends Component
 
         $approval->update([
             'status' => 'Approved',
+            'remarks' => $this->remarks,
             'approved_at' => now(),
         ]);
 
@@ -123,7 +124,11 @@ class ApproverDashboard extends Component
             'requests' => $requests,
             'myLevel' => $myLevel,
             'selectedRequest' => $this->selected_request_id
-                ? ItemRequest::with(['requestItems.item', 'user'])->find($this->selected_request_id)
+                ? ItemRequest::with([
+                    'requestItems.item', 
+                    'user',
+                    'requestApprovals' => fn ($q) => $q->orderBy('sequence')
+                    ])->find($this->selected_request_id)
                 : null,
         ]);
     }

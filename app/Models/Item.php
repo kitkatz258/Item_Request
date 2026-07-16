@@ -10,7 +10,7 @@ class Item extends Model
     use HasFactory;
 
     protected $table = 'items';
-    protected $fillable = ['name', 'description', 'image', 'qty', 'status'];
+    protected $fillable = ['name', 'description', 'image', 'qty', 'price', 'status'];
 
     public function itemRequestItems()
     {

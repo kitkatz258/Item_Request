@@ -33,7 +33,7 @@
         <div class="col-md-4">
             <div class="card sticky-top" style="top: 20px;">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Your Cart</span>
+                    <span>Your Items</span>
                     <span class="badge bg-primary">{{ $draftItems->count() }} items</span>
                 </div>
                 <div class="card-body">
