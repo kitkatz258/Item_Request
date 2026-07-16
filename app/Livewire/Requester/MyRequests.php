@@ -32,7 +32,7 @@ class MyRequests extends Component
             ->first();
 
         if(!$request) {
-            session()->flash('error', 'This request can no longer be cancelled.');
+            $this->dispatch('notify', type: 'error', message: 'This request can no longer be cancelled.');
             return;
         }
 
@@ -41,7 +41,7 @@ class MyRequests extends Component
         \App\Models\ItemRequestApproval::where('request_id', $request->id)
             ->update(['status' => 'Cancelled']);
         
-        session()->flash('message', 'Request cancelled.');
+        $this->dispatch('notify', type: 'success', message: 'Request cancelled.');
         $this->closeModal();
     }
 

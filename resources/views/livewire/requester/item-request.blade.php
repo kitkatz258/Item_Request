@@ -1,11 +1,4 @@
 <div>
-    @if(session()->has('message'))
-        <div class="alert alert-success">{{ session('message') }}</div>
-    @endif
-    @if(session()->has('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
     <div class="row">
         <div class="col-md-8">
             <div class="row g-3 row-cols-2 row-cols-sm-3 row-cols-md-4">
@@ -44,17 +37,23 @@
                     @if($draftItems->isEmpty())
                         <p class="text-muted text-center">No items in cart yet.</p>
                     @else
-                        <table class="table table-sm">
+                        <table class="table table-sm align-middle">
                             <tbody>
                                 @foreach($draftItems as $draft)
                                     <tr wire:key="draft-{{ $draft->id }}">
                                         <td>{{ $draft->item->name }}</td>
-                                        <td class="text-center">x{{ $draft->quantity }}</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-danger"
-                                                wire:click="removeFromCart({{ $draft->item_id }})">
-                                                &times;
-                                            </button>
+                                        <td class="text-center" style="width: 130px;">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                    wire:click="decrementCartItem({{ $draft->item_id }})">
+                                                    &minus;
+                                                </button>
+                                                <span class="btn btn-light disabled">{{ $draft->quantity }}</span>
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                    wire:click="incrementCartItem ({{ $draft->item_id }})">
+                                                    &plus;
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

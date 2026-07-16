@@ -35,7 +35,7 @@ class ApproverDashboard extends Component
         $request = ItemRequest::find($this->selected_request_id);
 
         if (!$myLevel || !$request || $request->current_sequence !== $myLevel->sequence) {
-            session()->flash('error', 'This request is not awaiting your approval.');
+            $this->dispatch('notify', type: 'error', message: 'This request is not awaiting your approval.');
             $this->closeModal();
             return;
         }
@@ -63,10 +63,10 @@ class ApproverDashboard extends Component
             }
 
             $request->update(['status' => 'Completed']);
-            session()->flash('message', 'Request approved and fulfilled.');
+            $this->dispatch('notify', type: 'success', message: 'Request approved and fulfilled.');
         } else {
             $request->update(['current_sequence' => $myLevel->sequence + 1]);
-            session()->flash('message', 'Request approved.');
+            $this->dispatch('notify', type: 'success', message: 'Request approved');
         }
 
         $this->closeModal();
@@ -84,7 +84,7 @@ class ApproverDashboard extends Component
         $request = ItemRequest::find($this->selected_request_id);
 
         if (!$myLevel || !$request || $request->current_sequence !== $myLevel->sequence) {
-            session()->flash('error', 'This request is not awaiting your approval.');
+            $this->dispatch('notify', type: 'error', message: 'This request is not awaiting your approval.');
             $this->closeModal();
             return;
         }
@@ -103,7 +103,7 @@ class ApproverDashboard extends Component
 
         $request->update(['status' => 'Declined']);
 
-        session()->flash('message', 'Request declined.');
+        $this->dispatch('notify', type: 'success', message: 'Request declined.');
         $this->closeModal();    
     }
 

@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Requester;
 
+use App\Models\ApprovalLevel;
 use App\Models\Item;
 use App\Models\DraftItem;
 use App\Models\ItemRequest as ItemRequestModel;
+use App\Models\ItemRequestApproval;
 use App\Models\ItemRequestItem;
 use Livewire\Component;
+
+use function PHPSTORM_META\type;
 
 class ItemRequest extends Component
 {
@@ -36,13 +40,36 @@ class ItemRequest extends Component
 
     public function addToCart()
     {
-        $qty = max(1, (int) $this->qty);
+        $item = Item::find($this->selected_item_id);
+
+        if(!$item) {
+            $this->dispatch('notify', type: 'error', message: 'Item not Found.');
+            return;
+        }
+        
+        $qty = (int) $this->qty;
+
+        if($qty <= 0) {
+            $this->dispatch('notify', type:'error', message: 'Quantity must be atleast 1');
+            return;
+        }
+
+        if($qty > $item->qty) {
+            $this->dispatch('notify', type: 'error', message: "Only {$item->qty} {$item->name} available");
+            return;
+        }
 
         $draft = DraftItem::where('user_id', auth()->id())
             ->where('item_id', $this->selected_item_id)
             ->first();
 
         if ($draft) {
+            $newTotal = $draft->quantity + $qty;
+            if($newTotal > $item->qty) {
+                $this->dispatch('notify', type: 'error', message: "Cannot add more than the available stock ({$item->qty}).");
+                return;
+            }
+
             $draft->update(['quantity' => $draft->quantity + $qty]);
         } else {
             DraftItem::create([
@@ -52,22 +79,52 @@ class ItemRequest extends Component
             ]);
         }
 
+        $this->dispatch('notify', type: 'success', message: 'Added to cart.');
         $this->closeModal();
     }
 
-    public function removeFromCart($itemId)
+    public function incrementCartItem($itemId)
     {
-        DraftItem::where('user_id', auth()->id())
+        $item = Item::find($itemId);
+        $draft = DraftItem::where('user_id', auth()->id())
             ->where('item_id', $itemId)
-            ->delete();
+            ->first();
+
+        if(!$draft || !$item) {
+            return;
+        }
+
+        if($draft->quantity >= $item->qty) {
+            $this->dispatch('notify', type: 'error', message: "Only {$item->qty} {$item->name} available.");
+            return;
+        }
+
+        $draft->increment('quantity');
+    }
+
+    public function decrementCartItem($itemId)
+    {
+        $draft = DraftItem::where('user_id', auth()->id())
+            ->where('item_id', $itemId)
+            ->first();
+
+        if(!$draft) {
+            return;
+        }
+
+        if($draft->quantity <= 1) {
+            $draft->delete();
+        } else {
+            $draft->decrement('quantity');
+        }
     }
 
     public function submitRequest()
     {
         $draftItems = DraftItem::where('user_id', auth()->id())->get();
 
-        if ($draftItems->isEmpty()) {
-            session()->flash('error', 'Your cart is empty.');
+        if($draftItems->isEmpty()) {
+            $this->dispatch('notify', type: 'error', message: 'Your request is empty');
             return;
         }
 
@@ -85,10 +142,10 @@ class ItemRequest extends Component
             ]);
         }
 
-        $levels = \App\Models\ApprovalLevel::orderBy('sequence')->get();
+        $levels = ApprovalLevel::orderBy('sequence')->get();
 
         foreach ($levels as $level) {
-            \App\Models\ItemRequestApproval::create([
+            ItemRequestApproval::create([
                 'request_id' => $request->id,
                 'approval_level_id' => $level->id,
                 'sequence' => $level->sequence,
@@ -97,7 +154,7 @@ class ItemRequest extends Component
         }
 
         DraftItem::where('user_id', auth()->id())->delete();
-        session()->flash('message', 'Request submitted successfully!');
+        $this->dispatch('notify', type: 'success', message: 'Request submitted successfully!');
     }
 
     public function render()
