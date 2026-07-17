@@ -11,12 +11,12 @@ use Livewire\Component;
 
 class ApproverDashboard extends Component
 {
-
     public $showModal = false;
     public $selected_request_id = null;
     public $remarks = '';
     public $approvedQuantities = [];
 
+    #[On('reviewRequest')]
     public function viewRequest($requestId)
     {
         $this->selected_request_id = $requestId;
@@ -116,6 +116,7 @@ class ApproverDashboard extends Component
 
             $request->update(['status' => 'Declined']);
             $this->dispatch('notify', type: 'success', message: 'All items were removed — request declined.');
+            $this->dispatch('reloadTable');
             $this->closeModal();
             return;
         }
@@ -150,6 +151,7 @@ class ApproverDashboard extends Component
             $this->dispatch('notify', type: 'success', message: 'Request approved.');
         }
 
+        $this->dispatch('reloadTable');
         $this->closeModal();
     }
 
@@ -185,31 +187,23 @@ class ApproverDashboard extends Component
         $request->update(['status' => 'Declined']);
 
         $this->dispatch('notify', type: 'success', message: 'Request declined.');
-        $this->closeModal();    
+        $this->dispatch('reloadTable');
+        $this->closeModal();
     }
 
     public function render()
     {
         $myLevel = ApprovalLevel::where('user_id', auth()->id())->first();
 
-        $requests = $myLevel
-            ? ItemRequest::where('status', 'Pending')
-                ->where('current_sequence', $myLevel->sequence)
-                ->withCount('requestItems')
-                ->with('user')
-                ->latest()
-                ->get()
-            : collect();
-
         return view('livewire.approver.approver-dashboard', [
-            'requests' => $requests,
             'myLevel' => $myLevel,
             'selectedRequest' => $this->selected_request_id
                 ? ItemRequest::with([
-                    'requestItems.item', 
+                    'requestItems.item',
                     'user',
-                    'requestApprovals' => fn ($q) => $q->orderBy('sequence')
-                    ])->find($this->selected_request_id)
+                    'requestApprovals' => fn ($q) => $q->orderBy('sequence'),
+                    'requestApprovals.approvalLevel',
+                ])->find($this->selected_request_id)
                 : null,
         ]);
     }

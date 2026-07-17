@@ -1,10 +1,8 @@
 <div>
     <h2 class="mb-3">My Requests</h2>
 
-    @if($requests->isEmpty())
-        <p class="text-muted">You haven't submitted any requests yet.</p>
-    @else
-        <table class="table table-hover">
+    <div wire:ignore>
+        <table class="table table-hover w-100" id="my-requests-table">
             <thead>
                 <tr>
                     <th>Request #</th>
@@ -14,34 +12,58 @@
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach($requests as $request)
-                    <tr wire:key="request-{{ $request->id }}">
-                        <td>#{{ $request->id }}</td>
-                        <td>{{ $request->request_items_count }} item(s)</td>
-                        <td>
-                            <span class="badge bg-{{ $request->status === 'Approved' ? 'success' : ($request->status === 'Declined' ? 'danger' : ($request->status === 'Cancelled' ? 'secondary' : 'warning')) }}">
-                                {{ $request->status }}
-                            </span>
-                        </td>
-                        <td>{{ $request->created_at->format('M d, Y') }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" wire:click="viewRequest({{ $request->id }})">
-                                View
-                            </button>
-                            
-                            @if($request->status === 'Pending' && $request->current_sequence === 1)
-                                <button class="btn btn-sm btn-outline-primary" wire:click="cancelRequest({{ $request->id }})"
-                                    onclick="return confirm('Cancel this request?')">
-                                    Cancel
-                                </button>
-                            @endif
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
         </table>
-    @endif
+    </div>
 
     @include('livewire.requester.modal.request-detail-modal')
+
+    <script>
+        function initMyRequestsTable() {
+            if ($.fn.DataTable.isDataTable('#my-requests-table')) {
+                $('#my-requests-table').DataTable().destroy();
+            }
+
+            $('#my-requests-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: '{{ route("requester.my-requests.fetch") }}',
+                columns: [
+                    { data: 'id', name: 'id', render: (data) => '#' + data },
+                    { data: 'items', name: 'items', orderable: false, searchable: false },
+                    { data: 'status_badge', name: 'status', orderable: false, searchable: false },
+                    { data: 'submitted', name: 'created_at' },
+                    { data: 'action', name: 'action', orderable: false, searchable: false },
+                ],
+            });
+        }
+
+        document.addEventListener('livewire:navigated', initMyRequestsTable);
+        document.addEventListener('DOMContentLoaded', initMyRequestsTable);
+
+        function viewRequest(id) {
+            Livewire.dispatch('viewRequest', { requestId: id });
+        }
+
+        function cancelRequestConfirm(id) {
+            Swal.fire({
+                title: 'Cancel this request?',
+                text: 'This cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, cancel it',
+                cancelButtonText: 'No',
+                confirmButtonColor: '#dc3545',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Livewire.dispatch('cancelRequest', { requestId: id });
+                }
+            });
+        }
+
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('reloadTable', () => {
+                $('#my-requests-table').DataTable().ajax.reload();
+            });
+        });
+    </script>
 </div>

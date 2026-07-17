@@ -1,8 +1,13 @@
 <div>
-    @if($requests->isEmpty())
-        <p class="text-muted">No requests currently awaiting your approval.</p>
+    <h2 class="mb-1">Approver Dashboard</h2>
+    @if($myLevel)
+        <p class="text-muted">Step {{ $myLevel->sequence }}: {{ $myLevel->label }}</p>
     @else
-        <table class="table table-hover">
+        <p class="text-danger">No approval level assigned to your account. Contact the admin.</p>
+    @endif
+
+    <div wire:ignore>
+        <table class="table table-hover w-100" id="approver-requests-table">
             <thead>
                 <tr>
                     <th>Request #</th>
@@ -12,27 +17,38 @@
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach($requests as $request)
-                    <tr wire:key="req-{{ $request->id }}">
-                        <td>#{{ $request->id }}</td>
-                        <td>{{ $request->user->name }}</td>
-                        <td>{{ $request->request_items_count }} item(s)</td>
-                        <td>{{ $request->created_at->format('M d, Y') }}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" wire:click="viewRequest({{ $request->id }})">
-                                Review
-                            </button>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
         </table>
-    @endif
+    </div>
 
     @include('livewire.approver.modal.request-review-modal')
 
     <script>
+        function initApproverTable() {
+            if ($.fn.DataTable.isDataTable('#approver-requests-table')) {
+                $('#approver-requests-table').DataTable().destroy();
+            }
+
+            $('#approver-requests-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: '{{ route("approver.requests.fetch") }}',
+                columns: [
+                    { data: 'id', name: 'id', render: (data) => '#' + data },
+                    { data: 'requested_by', name: 'user.name' },
+                    { data: 'items', name: 'items', orderable: false, searchable: false },
+                    { data: 'submitted', name: 'created_at' },
+                    { data: 'action', name: 'action', orderable: false, searchable: false },
+                ],
+            });
+        }
+
+        document.addEventListener('livewire:navigated', initApproverTable);
+        document.addEventListener('DOMContentLoaded', initApproverTable);
+
+        function reviewRequest(id) {
+            Livewire.dispatch('reviewRequest', { requestId: id });
+        }
+
         function confirmDecrement(itemId, currentQty, itemName, totalItemsInRequest) {
             if (currentQty > 1) {
                 Livewire.dispatch('decrementApprovedQty', { itemId: itemId });
@@ -57,5 +73,11 @@
                 }
             });
         }
+
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('reloadTable', () => {
+                $('#approver-requests-table').DataTable().ajax.reload();
+            });
+        });
     </script>
 </div>

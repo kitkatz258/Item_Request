@@ -4,6 +4,7 @@ namespace App\Livewire\Requester;
 
 use App\Models\ItemRequest;
 use App\Models\ItemRequestApproval;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class MyRequests extends Component
@@ -11,6 +12,7 @@ class MyRequests extends Component
     public $showModal = false;
     public $selected_request_id = null;
 
+    #[On('viewRequest')]
     public function viewRequest($requestId)
     {
         $this->selected_request_id = $requestId;
@@ -23,6 +25,7 @@ class MyRequests extends Component
         $this->selected_request_id = null;
     }
 
+    #[On('cancelRequest')]
     public function cancelRequest($requestId)
     {
         $request = ItemRequest::where('id', $requestId)
@@ -38,10 +41,11 @@ class MyRequests extends Component
 
         $request->update(['status' => 'Cancelled']);
 
-        \App\Models\ItemRequestApproval::where('request_id', $request->id)
+        ItemRequestApproval::where('request_id', $request->id)
             ->update(['status' => 'Cancelled']);
         
         $this->dispatch('notify', type: 'success', message: 'Request cancelled.');
+        $this->dispatch('reloadTable');
         $this->closeModal();
     }
 
