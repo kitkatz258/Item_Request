@@ -3,10 +3,10 @@
 namespace App\Livewire\Approver;
 
 use App\Models\ApprovalLevel;
-use App\Models\Item;
 use App\Models\ItemRequest;
 use App\Models\ItemRequestApproval;
 use App\Models\ItemRequestItem;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ApproverDashboard extends Component
@@ -51,6 +51,7 @@ class ApproverDashboard extends Component
         $this->approvedQuantities[$itemId] = $current + 1;
     }
 
+    #[On('decrementApprovedQty')]
     public function decrementApprovedQty($itemId)
     {
         $current = $this->approvedQuantities[$itemId] ?? 0;

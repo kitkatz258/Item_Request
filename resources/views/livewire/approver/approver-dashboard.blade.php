@@ -31,4 +31,31 @@
     @endif
 
     @include('livewire.approver.modal.request-review-modal')
+
+    <script>
+        function confirmDecrement(itemId, currentQty, itemName, totalItemsInRequest) {
+            if (currentQty > 1) {
+                Livewire.dispatch('decrementApprovedQty', { itemId: itemId });
+                return;
+            }
+
+            const message = totalItemsInRequest === 1
+                ? `This will remove ${itemName} and decline the entire request since it's the only item. Continue?`
+                : `This will remove ${itemName} from the request. Continue?`;
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, remove it',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#dc3545',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Livewire.dispatch('decrementApprovedQty', { itemId: itemId });
+                }
+            });
+        }
+    </script>
 </div>

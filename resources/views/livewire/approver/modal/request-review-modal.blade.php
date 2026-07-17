@@ -22,18 +22,10 @@
                                     <td>{{ $ri->item->name }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            @if($current <= 1)
-                                                <button type="button" class="btn btn-outline-danger"
-                                                    wire:click="decrementApprovedQty({{ $ri->id }})"
-                                                    wire:confirm="This will remove {{ $ri->item->name }} from the request{{ $selectedRequest->requestItems->count() === 1 ? ' and decline the entire request since it is the only item' : '' }}. Continue?">
-                                                    &minus;
-                                                </button>
-                                            @else
-                                                <button type="button" class="btn btn-outline-secondary"
-                                                    wire:click="decrementApprovedQty({{ $ri->id }})">
-                                                    &minus;
-                                                </button>
-                                            @endif
+                                            <button type="button" class="btn btn-outline-{{ $current <= 1 ? 'danger' : 'secondary' }}"
+                                                onclick="confirmDecrement({{ $ri->id }}, {{ $current }}, '{{ $ri->item->name }}', {{ $selectedRequest->requestItems->count() }})">
+                                                &minus;
+                                            </button>
                                             <span class="btn btn-light disabled">{{ $current }}</span>
                                             <button type="button" class="btn btn-outline-secondary"
                                                 wire:click="incrementApprovedQty({{ $ri->id }})"
