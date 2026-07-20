@@ -54,7 +54,7 @@
                                         </span>
                                     </div>
                                     @if($approval->remarks)
-                                        <div class="text-muted small mt-1">"{{ $approval->remarks }}</div>
+                                        <div class="text-muted small mt-1">"{{ $approval->remarks }}"</div>
                                     @endif
                                 </li>
                             @endforeach
